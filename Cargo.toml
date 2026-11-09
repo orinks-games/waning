@@ -1,7 +1,7 @@
 [package]
 name = "waning"
 description = "An audio roguelike sidescroller where you start strong and weaken as you go"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 publish = false

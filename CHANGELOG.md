@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- The Windows download now includes SDL2.dll, so the game starts.
+
 ## 0.1.0
 
 The first release.

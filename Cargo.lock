@@ -1954,7 +1954,7 @@ dependencies = [
 
 [[package]]
 name = "waning"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "hearken",
  "hearken-genny",

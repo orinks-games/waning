@@ -37,10 +37,30 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Install the hearken command
-        run: cargo install --locked --git https://github.com/orinks-games/hearken hearken-cli
+        shell: bash
+        run: |
+          # The same Hearken commit the game is locked to, so a cached older
+          # copy of the command is replaced when the lock moves.
+          rev=$(grep -m1 -o 'orinks-games/hearken?rev=[0-9a-f]*' Cargo.lock | cut -d= -f2)
+          cargo install --locked --git https://github.com/orinks-games/hearken --rev "$rev" hearken-cli
+
+      - name: Stage SDL2 again
+        if: runner.os == 'Windows'
+        # hearken-app's build script puts SDL2.dll beside the build, but the
+        # cache restores the build without it and the script does not run
+        # again. Cleaning that one crate makes it run.
+        run: cargo clean --release -p hearken-app
 
       - name: Build the release
         run: hearken release .
+
+      - name: Check the Windows zip has SDL2
+        if: runner.os == 'Windows'
+        run: |
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $zip = Get-Item dist/*-windows-x64.zip
+          $names = [IO.Compression.ZipFile]::OpenRead($zip.FullName).Entries.Name
+          if ($names -notcontains 'SDL2.dll') { Write-Error "SDL2.dll is missing from $($zip.Name)"; exit 1 }
 
       - uses: actions/upload-artifact@v4
         with:

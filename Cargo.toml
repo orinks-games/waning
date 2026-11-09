@@ -1,0 +1,18 @@
+[package]
+name = "waning"
+description = "An audio sidescroller where you start strong and weaken as you go"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+publish = false
+build = "build.rs"
+
+[dependencies]
+hearken = { git = "https://github.com/orinks-games/hearken", rev = "667d7fadff8e4035925aa578632a9081fd5a2845" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+log = "0.4"
+
+[dev-dependencies]
+# Only the demo recorder uses it, to speak the transcript into the file.
+hearken-genny = { git = "https://github.com/orinks-games/hearken", rev = "667d7fadff8e4035925aa578632a9081fd5a2845" }

@@ -47,9 +47,17 @@ jobs:
           name: waning-${{ matrix.os }}
           path: dist/*
 
+      - name: Release notes
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          # The CHANGELOG section for this version, without its heading.
+          version="${GITHUB_REF_NAME#v}"
+          awk -v h="## $version" '$0 == h {on=1; next} /^## / {on=0} on' CHANGELOG.md > notes.md
+
       - name: Attach to the GitHub release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*
-          body_path: CHANGELOG.md
+          body_path: notes.md

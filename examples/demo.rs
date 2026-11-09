@@ -19,12 +19,17 @@ const FPS: usize = 60;
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let out = args.first().map(String::as_str).unwrap_or("demo.wav");
-    let seconds: f64 = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(120.0);
+    let seconds: f64 = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(240.0);
     let seed: u64 = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(4);
 
+    // A few runs in: some blessings bought, so the recording reaches a boss.
     let progress = Progress {
         loaded: true,
-        runs: 1,
+        runs: 4,
+        might: 2,
+        vigor: 2,
+        steadfast: 2,
+        heard: vec!["opening".into()],
         ..Progress::default()
     };
     let mut h = Headless::<Waning>::new(progress.clone(), Title::new());
@@ -42,6 +47,12 @@ fn main() {
     let dt = 1.0 / FPS as f64;
 
     // A beat of the title, then straight into a descent.
+    for _ in 0..FPS * 3 {
+        h.frame(dt);
+        if let Some(block) = h.app.ctx.audio.render(per_frame) {
+            mix.extend(block);
+        }
+    }
     h.press(Key::Down);
     h.app
         .ctx

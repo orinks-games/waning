@@ -4,8 +4,9 @@
 use hearken::menu::{Label, Menu, MenuCore, MenuItem};
 use hearken::{Bus, Ctx, Sound};
 
-use crate::progress::{Blessing, BuyError};
-use crate::world::{World, AREAS};
+use crate::progress::{Blessing, BuyError, Progress};
+use crate::story;
+use crate::world::{World, STAGES};
 use crate::{Play, Waning};
 
 pub struct Heaven {
@@ -94,16 +95,33 @@ impl Menu for Heaven {
         if !ctx.game.loaded {
             ctx.game = crate::Progress::load(&mut ctx.vault);
         }
-        self.ambience = ctx.audio.start_loop("amb/heaven", None, Bus::AMBIENCE);
+        self.ambience = ctx.audio.start_loop("music/heaven", None, Bus::MUSIC);
         self.refresh(ctx, false);
         let grace = format!("Heaven. {} grace.", ctx.game.grace);
-        match self.arrival.take() {
-            Some(line) => {
-                ctx.audio.play("sfx/ascend", Bus::EFFECTS);
-                ctx.say(line);
-                ctx.say_queued(grace);
+        if let Some(line) = self.arrival.take() {
+            ctx.audio.play("sfx/ascend", Bus::EFFECTS);
+            ctx.say(line);
+            ctx.say_queued(grace);
+        } else {
+            ctx.say(grace);
+        }
+        // The Keeper speaks to what you have reached, once each.
+        let p = &mut ctx.game;
+        let mut keeper = None;
+        if !p.heard.iter().any(|h| h == "opening") {
+            Progress::mark(&mut p.heard, "opening");
+            keeper = Some(story::OPENING);
+        } else if let Some(beat) = story::unheard(p) {
+            for b in story::Beat::ALL {
+                if b.reached(p) {
+                    Progress::mark(&mut p.heard, b.id());
+                }
             }
-            None => ctx.say(grace),
+            keeper = Some(beat.line());
+        }
+        if let Some(line) = keeper {
+            ctx.game.save(&mut ctx.vault);
+            ctx.say_queued(line);
         }
         let current = self.current_text(ctx);
         ctx.say_queued(current);
@@ -125,14 +143,28 @@ impl Menu for Heaven {
             .help("Start a new run from the top."),
         ];
         items.extend(Blessing::ALL.into_iter().map(Self::blessing_row));
+        items.push(
+            MenuItem::new("The Keeper", |_s: &mut Self, ctx: &mut Ctx<Waning>| {
+                let line = story::latest(&ctx.game).map_or(story::OPENING, |b| b.line());
+                ctx.say(line);
+            })
+            .help("Hear the Keeper again."),
+        );
         let p = &ctx.game;
         if p.deepest > 0 {
-            let deepest = AREAS[(p.deepest as usize - 1).min(AREAS.len() - 1)];
+            let deepest = STAGES[(p.deepest as usize - 1).min(STAGES.len() - 1)].name;
             let runs = match p.runs {
                 1 => "1 run".to_string(),
                 n => format!("{n} runs"),
             };
-            items.push(MenuItem::inert(format!("Deepest: {deepest}, in {runs}")));
+            let wins = match p.wins {
+                0 => String::new(),
+                1 => ", 1 descent to the bottom".to_string(),
+                n => format!(", {n} descents to the bottom"),
+            };
+            items.push(MenuItem::inert(format!(
+                "Deepest: {deepest}, in {runs}{wins}"
+            )));
         }
         items.push(
             MenuItem::new("Title menu", |_s: &mut Self, ctx: &mut Ctx<Waning>| {

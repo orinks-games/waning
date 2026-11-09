@@ -6,12 +6,14 @@ use crate::{Heaven, Waning, HELP};
 
 pub struct Title {
     menu: MenuCore<Self, Waning>,
+    music: hearken::Sound,
 }
 
 impl Title {
     pub fn new() -> Self {
         Title {
             menu: MenuCore::new("Waning"),
+            music: hearken::Sound::NONE,
         }
     }
 }
@@ -35,6 +37,17 @@ impl Menu for Title {
 
     fn menu_mut(&mut self) -> &mut MenuCore<Self, Waning> {
         &mut self.menu
+    }
+
+    fn enter(&mut self, ctx: &mut Ctx<Waning>) {
+        self.music = ctx
+            .audio
+            .start_loop("music/title", None, hearken::Bus::MUSIC);
+        hearken::menu::menu_enter(self, ctx);
+    }
+
+    fn exit(&mut self, ctx: &mut Ctx<Waning>) {
+        ctx.audio.stop(self.music, 1000);
     }
 
     fn build_items(&mut self, _ctx: &mut Ctx<Waning>) -> Vec<MenuItem<Self, Waning>> {

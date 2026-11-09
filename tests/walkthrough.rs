@@ -1,5 +1,6 @@
 use hearken::{Headless, InputEvent, Key};
-use waning::world::{Mode, World};
+use waning::story;
+use waning::world::{BossKind, Mode, Relic, World};
 use waning::{Heaven, Play, Progress, Title, Waning};
 
 fn events(h: &Headless<Waning>) -> Vec<String> {
@@ -20,92 +21,102 @@ fn hold(h: &mut Headless<Waning>, key: Key, seconds: f64) {
     h.send(InputEvent::key_up(key));
 }
 
+fn played(h: &Headless<Waning>, key: &str) -> bool {
+    h.played().iter().any(|k| k == key)
+}
+
 #[test]
 fn the_title_leads_to_heaven_and_heaven_to_a_descent() {
     let mut h = Headless::<Waning>::new(Progress::default(), Title::new());
     assert_eq!(h.spoken(), ["Waning.", "Play. 1 of 4."]);
+    assert!(played(&h, "music/title"));
     h.clear();
     h.press(Key::Return);
     assert_eq!(h.app.top_name(), "heaven");
-    assert_eq!(h.spoken(), ["Heaven. 0 grace.", "Descend. 1 of 6."]);
-    assert!(h.played().contains(&"amb/heaven".to_string()));
+    assert_eq!(
+        h.spoken(),
+        ["Heaven. 0 grace.", story::OPENING, "Descend. 1 of 7."]
+    );
+    assert!(played(&h, "music/heaven"));
     h.clear();
     h.press(Key::Down);
-    assert_eq!(h.spoken(), ["Might, level 0 of 5, next costs 25. 2 of 6."]);
+    assert_eq!(h.spoken(), ["Might, level 0 of 5, next costs 40. 2 of 7."]);
     h.press(Key::Return);
-    assert_eq!(h.spoken().last().unwrap(), "You need 25 more grace.");
+    assert_eq!(h.spoken().last().unwrap(), "You need 40 more grace.");
     h.press(Key::Home);
     h.clear();
     h.press(Key::Return);
     assert_eq!(h.app.top_name(), "play");
-    let said = h.spoken();
-    assert!(
-        said[0].starts_with("You carry all of heaven's strength down with you"),
-        "{said:?}"
-    );
-    assert!(
-        said[0].contains("The Bright Fields. Area 1 of 8."),
-        "{said:?}"
-    );
-    assert!(h.played().contains(&"amb/road".to_string()));
+    assert_eq!(h.spoken(), ["The Bright Fields."]);
+    assert!(played(&h, "music/region1"));
+    assert!(played(&h, "amb/region1"));
 }
 
 #[test]
-fn walking_right_steps_and_meets_a_slime() {
+fn walking_right_steps_and_hears_a_slime_without_being_told() {
     let mut h = Headless::<Waning>::new(Progress::default(), Title::new());
     h.press(Key::Return);
     h.press(Key::Return);
     h.clear();
     hold(&mut h, Key::Right, 3.0);
-    let played = h.played();
+    let keys = h.played();
     assert!(
-        played.iter().any(|k| k.starts_with("sfx/step")),
-        "{played:?}"
+        keys.iter().any(|k| k.starts_with("sfx/step_grass")),
+        "{keys:?}"
     );
-    assert!(played.contains(&"loop/slime".to_string()), "{played:?}");
+    assert!(played(&h, "loop/slime"), "{keys:?}");
     assert!(
-        events(&h).contains(&"Slime ahead.".to_string()),
-        "{:?}",
+        events(&h).is_empty(),
+        "nothing is said about what can be heard: {:?}",
         events(&h)
     );
     h.clear();
     h.press(Key::S);
     let status = &h.spoken()[0];
     assert!(
-        status.starts_with("Health 100 of 100. Power 60. 0 souls. The Bright Fields,"),
+        status
+            .starts_with("Health 100 of 100. Power 60. 0 souls. The Bright Fields, stage 1 of 12."),
         "{status}"
     );
 }
 
 #[test]
-fn falling_sends_your_souls_to_heaven_as_grace() {
+fn falling_sends_your_souls_to_heaven_and_the_keeper_speaks() {
     let mut world = World::new(&Progress::default(), 5);
     world.health = 1.0;
     world.souls = 40;
     world.enemies.truncate(1);
     world.enemies[0].x = 1.4;
     world.enemies[0].mode = Mode::WindUp(0.05);
-    let mut h = Headless::<Waning>::new(Progress::default(), Play::new(world));
+    let p = Progress {
+        runs: 1,
+        loaded: true,
+        heard: vec!["opening".into()],
+        ..Progress::default()
+    };
+    let mut h = Headless::<Waning>::new(p, Play::new(world));
     h.clear();
     for _ in 0..10 {
         h.frame(1.0 / 60.0);
     }
     assert_eq!(h.app.top_name(), "heaven");
     assert_eq!(h.app.ctx.game.grace, 40);
+    let said = h.spoken();
     assert_eq!(
-        h.spoken()[..2],
+        said[..3],
         [
             "You fall in the Bright Fields. 40 souls rise with you.",
-            "Heaven. 40 grace."
+            "Heaven. 40 grace.",
+            story::Beat::FirstFall.line(),
         ]
     );
-    assert!(h.played().contains(&"sfx/death".to_string()));
+    assert!(played(&h, "sfx/death"));
     h.clear();
     h.press(Key::Down);
     h.press(Key::Return);
     assert_eq!(
         h.spoken().last().unwrap(),
-        "Might is level 1. 15 grace left."
+        "Might is level 1. 0 grace left."
     );
     assert_eq!(h.app.ctx.game.might, 1);
 }
@@ -116,28 +127,73 @@ fn a_blow_kills_a_slime_at_full_strength_and_pays_souls() {
     world.enemies.truncate(1);
     world.enemies[0].x = 1.5;
     world.enemies[0].mode = Mode::Approach;
+    world.feature = None;
     let mut h = Headless::<Waning>::new(Progress::default(), Play::new(world));
     h.clear();
     h.press(Key::Space);
     h.frame(1.0 / 60.0);
-    let played = h.played();
-    for key in ["sfx/hit", "sfx/enemy_die", "sfx/soul"] {
-        assert!(played.contains(&key.to_string()), "{key} in {played:?}");
+    for key in ["sfx/slime_die", "sfx/soul"] {
+        assert!(played(&h, key), "{key} in {:?}", h.played());
     }
+    assert!(h.played().iter().any(|k| k.starts_with("sfx/hit")));
     h.clear();
     h.press(Key::D);
-    assert_eq!(h.spoken(), ["No enemies left in this area."]);
+    assert_eq!(h.spoken(), ["No enemies left here."]);
+}
+
+#[test]
+fn a_fallen_boss_offers_a_relic_and_the_run_keeps_it() {
+    let mut world = World::new(&Progress::default(), 9);
+    // Straight to the Shepherd, nearly beaten, right in front of you.
+    while world.stage_info().boss.is_none() {
+        world.enemies.clear();
+        world.x = world.length();
+        world.step(0.01, Default::default());
+    }
+    let boss = world.boss.as_mut().unwrap();
+    assert_eq!(boss.kind, BossKind::Shepherd);
+    boss.health = 1.0;
+    boss.enraged = true;
+    boss.x = 1.5;
+    let mut h = Headless::<Waning>::new(Progress::default(), Play::new(world));
+    assert!(played(&h, "boss/gong"));
+    assert!(h
+        .spoken()
+        .contains(&story::boss_intro(BossKind::Shepherd).to_string()));
+    h.clear();
+    h.press(Key::Space);
+    h.frame(1.0 / 60.0);
+    assert!(played(&h, "boss/shepherd_die"), "{:?}", h.played());
+    assert_eq!(h.app.top_name(), "relic choice");
+    let said = h.spoken();
+    assert_eq!(said[0], story::boss_defeat(BossKind::Shepherd));
+    assert_eq!(said[1], "The fallen leave a gift. Choose a relic.");
+    assert!(h.app.ctx.game.beaten.contains(&"shepherd".to_string()));
+    h.clear();
+    h.press(Key::Escape);
+    assert_eq!(h.spoken(), ["Choose one with Enter."]);
+    h.press(Key::Return);
+    assert_eq!(h.app.top_name(), "play");
+    let taken = h.spoken()[1].clone();
+    assert!(taken.ends_with(" is yours."), "{taken}");
+    h.clear();
+    h.press(Key::R);
+    let relics = &h.spoken()[0];
+    let name = taken.trim_end_matches(" is yours.");
+    assert!(Relic::ALL.iter().any(|r| r.name() == name));
+    assert_eq!(relics, &format!("Relics: {name}."));
 }
 
 #[test]
 fn heaven_remembers_progress_between_screens() {
     let p = Progress {
-        grace: 100,
+        grace: 200,
         loaded: true,
+        heard: vec!["opening".into()],
         ..Progress::default()
     };
     let mut h = Headless::<Waning>::new(p, Heaven::new());
-    assert_eq!(h.spoken()[0], "Heaven. 100 grace.");
+    assert_eq!(h.spoken()[0], "Heaven. 200 grace.");
     h.press(Key::Down);
     h.press(Key::Down);
     h.press(Key::Return); // Vigor
@@ -145,6 +201,44 @@ fn heaven_remembers_progress_between_screens() {
     h.press(Key::Escape);
     assert_eq!(h.app.top_name(), "title");
     h.press(Key::Return);
-    assert_eq!(h.spoken().last().unwrap(), "Descend. 1 of 6.");
-    assert_eq!(h.app.ctx.game.grace, 75);
+    assert_eq!(h.spoken().last().unwrap(), "Descend. 1 of 7.");
+    assert_eq!(h.app.ctx.game.grace, 160);
+}
+
+#[test]
+fn every_sound_a_run_plays_has_a_file() {
+    let blessed = Progress {
+        might: 5,
+        vigor: 5,
+        steadfast: 5,
+        mercy: 3,
+        loaded: true,
+        heard: vec!["opening".into()],
+        ..Progress::default()
+    };
+    let mut keys = std::collections::BTreeSet::new();
+    for seed in 0..3 {
+        let mut h = Headless::<Waning>::new(
+            blessed.clone(),
+            Play::autopilot(World::new(&blessed, seed), seed),
+        );
+        for _ in 0..60 * 60 * 15 {
+            h.frame(1.0 / 60.0);
+            keys.extend(h.played());
+            h.sounds.clear();
+            if h.app.top_name() == "heaven" {
+                break;
+            }
+        }
+    }
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("sounds");
+    let missing: Vec<_> = keys
+        .iter()
+        .filter(|k| !k.starts_with("ui/"))
+        .filter(|k| !root.join(format!("{k}.ogg")).exists())
+        .collect();
+    assert!(missing.is_empty(), "no file for {missing:?}");
+    for key in ["boss/king_loop", "music/king", "sfx/gate", "loop/wraith"] {
+        assert!(keys.contains(key), "a full run plays {key}: {keys:?}");
+    }
 }

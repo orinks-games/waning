@@ -43,15 +43,15 @@ impl Blessing {
             Blessing::Might => "Each level adds 15 to the power you start with.",
             Blessing::Vigor => "Each level adds 25 to the health you start with.",
             Blessing::Steadfast => {
-                "Each gate takes a quarter of your strength. Each level lowers that by 3 percent."
+                "Each gate takes 15 percent of your power and health. Each level lowers that by 2 and a half."
             }
             Blessing::Mercy => "Each level heals 15 percent of your health at every gate.",
         }
     }
 
-    /// Grace for the next level, from level `level`: 25, 75, 150, 250, 375.
+    /// Grace for the next level, from level `level`: 40, 120, 240, 400, 600.
     pub fn cost(self, level: u32) -> u32 {
-        25 * (level + 1) * (level + 2) / 2
+        40 * (level + 1) * (level + 2) / 2
     }
 }
 
@@ -64,8 +64,22 @@ pub struct Progress {
     pub mercy: u32,
     /// Runs started.
     pub runs: u32,
-    /// The deepest area reached, counted from 1. 0 before the first run.
+    /// The deepest stage reached, counted from 1. 0 before the first run.
     pub deepest: u32,
+    /// Runs that passed the last gate.
+    #[serde(default)]
+    pub wins: u32,
+    /// Bosses met and beaten, by key, on any run.
+    #[serde(default)]
+    pub met: Vec<String>,
+    #[serde(default)]
+    pub beaten: Vec<String>,
+    /// Story beats the Keeper has already told.
+    #[serde(default)]
+    pub heard: Vec<String>,
+    /// The relic just chosen from an offer, for the run to take.
+    #[serde(skip)]
+    pub picked: Option<crate::world::Relic>,
     /// Whether the save was read this session.
     #[serde(skip)]
     pub loaded: bool,
@@ -103,6 +117,12 @@ impl Progress {
         self.grace -= cost;
         *self.level_mut(b) += 1;
         Ok(level + 1)
+    }
+
+    pub fn mark(list: &mut Vec<String>, id: &str) {
+        if !list.iter().any(|x| x == id) {
+            list.push(id.to_string());
+        }
     }
 
     pub fn load(vault: &mut hearken::seal::Vault) -> Progress {

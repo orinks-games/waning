@@ -49,13 +49,13 @@ impl Blessing {
         }
     }
 
-    /// Grace for the next level, from level `level`: 40, 120, 240, 400, 600.
+    /// Grace for the next level, from level `level`: 60, 180, 360, 600, 900.
     pub fn cost(self, level: u32) -> u32 {
-        40 * (level + 1) * (level + 2) / 2
+        60 * (level + 1) * (level + 2) / 2
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Progress {
     pub grace: u32,
     pub might: u32,
@@ -83,6 +83,44 @@ pub struct Progress {
     /// Whether the save was read this session.
     #[serde(skip)]
     pub loaded: bool,
+    /// The music playing, shared by every screen.
+    #[serde(skip)]
+    pub jukebox: crate::music::Jukebox,
+    /// The gear just chosen from what lay on the ground.
+    #[serde(skip)]
+    pub chosen_gear: Option<u32>,
+    /// The run as the merchant left it.
+    #[serde(skip)]
+    pub world_back: Option<Box<crate::world::World>>,
+}
+
+/// The run in progress, as it stood when its current stage began.
+const RUN_FILE: &str = "run.json";
+
+pub fn save_run(vault: &mut hearken::seal::Vault, w: &crate::world::World) {
+    match serde_json::to_vec(w) {
+        Ok(bytes) => {
+            if let Err(e) = vault.write(RUN_FILE, &bytes) {
+                log::warn!("could not save the run: {e}");
+            }
+        }
+        Err(e) => log::warn!("could not encode the run: {e}"),
+    }
+}
+
+pub fn load_run(vault: &mut hearken::seal::Vault) -> Option<crate::world::World> {
+    let bytes = vault.read(RUN_FILE).trusted()?;
+    serde_json::from_slice(&bytes)
+        .map_err(|e| log::warn!("could not read the saved run: {e}"))
+        .ok()
+}
+
+pub fn clear_run(vault: &mut hearken::seal::Vault) {
+    if load_run(vault).is_some() {
+        if let Err(e) = vault.remove(RUN_FILE) {
+            log::warn!("could not remove the saved run: {e}");
+        }
+    }
 }
 
 impl Progress {

@@ -1,6 +1,8 @@
 //! Relics: what a run finds on the way down. They last until the run ends.
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Relic {
     EmberEdge,
     ThornMail,

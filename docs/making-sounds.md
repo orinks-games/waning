@@ -63,7 +63,7 @@ loudness.
 ## Music
 
 OpenGameArt has plenty of CC0 game music; Waning uses tracks by haeldb,
-isaiah658, eponasoft and Juhani Junkala. Suno or ElevenLabs could make
+isaiah658, cynicmusic and Juhani Junkala. Suno or ElevenLabs could make
 custom tracks, but they spend credits.
 
 ## 4. Licence bookkeeping

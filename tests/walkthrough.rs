@@ -40,9 +40,9 @@ fn the_title_leads_to_heaven_and_heaven_to_a_descent() {
     assert!(played(&h, "music/heaven"));
     h.clear();
     h.press(Key::Down);
-    assert_eq!(h.spoken(), ["Might, level 0 of 5, next costs 40. 2 of 7."]);
+    assert_eq!(h.spoken(), ["Might, level 0 of 5, next costs 60. 2 of 7."]);
     h.press(Key::Return);
-    assert_eq!(h.spoken().last().unwrap(), "You need 40 more grace.");
+    assert_eq!(h.spoken().last().unwrap(), "You need 60 more grace.");
     h.press(Key::Home);
     h.clear();
     h.press(Key::Return);
@@ -75,7 +75,7 @@ fn walking_right_steps_and_hears_a_slime_without_being_told() {
     let status = &h.spoken()[0];
     assert!(
         status
-            .starts_with("Health 100 of 100. Power 60. 0 souls. The Bright Fields, stage 1 of 12."),
+            .starts_with("Health 100 of 100. Power 60. 1 of 3 potions. 0 gold. 0 souls. The Bright Fields, stage 1 of 12."),
         "{status}"
     );
 }
@@ -84,7 +84,7 @@ fn walking_right_steps_and_hears_a_slime_without_being_told() {
 fn falling_sends_your_souls_to_heaven_and_the_keeper_speaks() {
     let mut world = World::new(&Progress::default(), 5);
     world.health = 1.0;
-    world.souls = 40;
+    world.souls = 60;
     world.enemies.truncate(1);
     world.enemies[0].x = 1.4;
     world.enemies[0].mode = Mode::WindUp(0.05);
@@ -99,18 +99,24 @@ fn falling_sends_your_souls_to_heaven_and_the_keeper_speaks() {
     for _ in 0..10 {
         h.frame(1.0 / 60.0);
     }
-    assert_eq!(h.app.top_name(), "heaven");
-    assert_eq!(h.app.ctx.game.grace, 40);
-    let said = h.spoken();
+    assert_eq!(h.app.top_name(), "summary");
+    assert_eq!(h.app.ctx.game.grace, 60);
     assert_eq!(
-        said[..3],
+        h.spoken()[..2],
         [
-            "You fall in the Bright Fields. 40 souls rise with you.",
-            "Heaven. 40 grace.",
-            story::Beat::FirstFall.line(),
+            "You fall in the Bright Fields. 60 souls rise with you.",
+            "Souls gathered: 60. 1 of 5.",
         ]
     );
     assert!(played(&h, "sfx/death"));
+    assert!(played(&h, "music/summary"));
+    h.clear();
+    h.press(Key::Escape);
+    assert_eq!(h.app.top_name(), "heaven");
+    assert_eq!(
+        h.spoken()[..2],
+        ["Heaven. 60 grace.", story::Beat::FirstFall.line()]
+    );
     h.clear();
     h.press(Key::Down);
     h.press(Key::Return);
@@ -127,7 +133,7 @@ fn a_blow_kills_a_slime_at_full_strength_and_pays_souls() {
     world.enemies.truncate(1);
     world.enemies[0].x = 1.5;
     world.enemies[0].mode = Mode::Approach;
-    world.feature = None;
+    world.features.clear();
     let mut h = Headless::<Waning>::new(Progress::default(), Play::new(world));
     h.clear();
     h.press(Key::Space);
@@ -176,12 +182,17 @@ fn a_fallen_boss_offers_a_relic_and_the_run_keeps_it() {
     assert_eq!(h.app.top_name(), "play");
     let taken = h.spoken()[1].clone();
     assert!(taken.ends_with(" is yours."), "{taken}");
-    h.clear();
-    h.press(Key::R);
-    let relics = &h.spoken()[0];
     let name = taken.trim_end_matches(" is yours.");
     assert!(Relic::ALL.iter().any(|r| r.name() == name));
-    assert_eq!(relics, &format!("Relics: {name}."));
+    // The relic is listed last in the inventory.
+    h.press(Key::I);
+    assert_eq!(h.app.top_name(), "inventory");
+    h.clear();
+    h.press(Key::End);
+    let last = &h.spoken()[0];
+    assert!(last.starts_with(&format!("{name}: ")), "{last}");
+    h.press(Key::Escape);
+    assert_eq!(h.app.top_name(), "play");
 }
 
 #[test]
@@ -202,7 +213,7 @@ fn heaven_remembers_progress_between_screens() {
     assert_eq!(h.app.top_name(), "title");
     h.press(Key::Return);
     assert_eq!(h.spoken().last().unwrap(), "Descend. 1 of 7.");
-    assert_eq!(h.app.ctx.game.grace, 160);
+    assert_eq!(h.app.ctx.game.grace, 140);
 }
 
 #[test]

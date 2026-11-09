@@ -18,10 +18,9 @@ fn bot_run(p: &Progress, seed: u64, miss_one_in: u64) -> (usize, u32, bool) {
         let input = bot.input(&w);
         for ev in w.step(dt, input) {
             match ev {
-                Ev::Died => return (w.stage, w.souls, false),
-                Ev::Won => return (w.stage, w.souls, true),
-                Ev::RelicOffer(offer) => bot.offered(offer),
-                _ => {}
+                Ev::Died => return (w.stage, w.souls + w.gold_souls(), false),
+                Ev::Won => return (w.stage, w.souls + w.gold_souls(), true),
+                other => bot.react(&mut w, &other),
             }
         }
     }

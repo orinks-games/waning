@@ -1,6 +1,6 @@
 //! A small seeded random source, so a run can be replayed in tests.
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Rng(u64);
 
 impl Rng {

@@ -1,0 +1,55 @@
+# Builds the player downloads with `hearken release` on Windows, macOS and
+# Linux. A run started by hand keeps the archives as workflow artifacts; a
+# pushed v* tag also attaches them to that tag's GitHub release.
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-14, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake pkg-config build-essential libasound2-dev \
+            libpulse-dev libspeechd-dev libx11-dev libxext-dev libxrandr-dev \
+            libxcursor-dev libxi-dev libxss-dev libxkbcommon-dev libwayland-dev \
+            wayland-protocols libdecor-0-dev libegl1-mesa-dev libgl1-mesa-dev \
+            libdbus-1-dev libudev-dev
+
+      - name: Toolchain
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install the hearken command
+        run: cargo install --locked --git https://github.com/orinks-games/hearken hearken-cli
+
+      - name: Build the release
+        run: hearken release .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: waning-${{ matrix.os }}
+          path: dist/*
+
+      - name: Attach to the GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          body_path: CHANGELOG.md

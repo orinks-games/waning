@@ -1,11 +1,15 @@
 [package]
 name = "waning"
-description = "An audio sidescroller where you start strong and weaken as you go"
+description = "An audio roguelike sidescroller where you start strong and weaken as you go"
 version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 publish = false
 build = "build.rs"
+
+[package.metadata.hearken]
+include = ["sounds", "README.md", "CHANGELOG.md", "LICENSE-MIT", "LICENSE-APACHE"]
+app-name = "Waning"
 
 [dependencies]
 hearken = { git = "https://github.com/orinks-games/hearken", rev = "667d7fadff8e4035925aa578632a9081fd5a2845" }

@@ -15,13 +15,17 @@ https://opengameart.org/content/rpg-sound-pack
 | boss/appear | battle/spell.wav |
 | sfx/altar | battle/magic1.wav |
 | sfx/bump | inventory/cloth-heavy.wav |
+| sfx/charged | inventory/metal-ringing.wav |
 | sfx/draw | battle/sword-unsheathe.wav |
+| sfx/drink | inventory/bubble.wav |
+| sfx/equip | inventory/armor-light.wav |
 | sfx/ogre_cry1 | NPC/ogre/ogre1.wav |
 | sfx/ogre_cry2 | NPC/ogre/ogre3.wav |
 | sfx/ogre_cry3 | NPC/ogre/ogre5.wav |
 | sfx/shade_cry1 | NPC/shade/shade1.wav |
 | sfx/shade_cry2 | NPC/shade/shade5.wav |
 | sfx/shade_cry3 | NPC/shade/shade9.wav |
+| sfx/spike_up | battle/sword-unsheathe3.wav |
 
 ## 80 CC0 RPG SFX, by rubberduck
 
@@ -33,19 +37,24 @@ https://opengameart.org/content/80-cc0-rpg-sfx
 | boss/volley | spell_fire_05.ogg |
 | loop/bolt | spell_fire_03.ogg |
 | loop/chest | chain_01.ogg, chain_02.ogg, chain_03.ogg |
+| loop/loot | item_gem_01.ogg, item_gem_02.ogg, item_gem_03.ogg |
 | sfx/bolt_hit | spell_fire_02.ogg |
 | sfx/buy | item_coins_01.ogg |
 | sfx/chest_open | lock_01.ogg |
+| sfx/coins | item_coins_02.ogg |
 | sfx/ember | spell_fire_01.ogg |
 | sfx/heal | spell_01.ogg |
+| sfx/heavy_hit | blade_02.ogg |
 | sfx/hit1 | blade_01.ogg |
 | sfx/hit2 | blade_02.ogg |
 | sfx/hit3 | blade_03.ogg |
+| sfx/loot_drop | item_misc_02.ogg |
 | sfx/shade_die | creature_die_01.ogg |
 | sfx/slime_cry1 | creature_slime_01.ogg |
 | sfx/slime_cry2 | creature_slime_02.ogg |
 | sfx/slime_cry3 | creature_slime_03.ogg |
 | sfx/soul | item_gem_04.ogg |
+| sfx/stagger | creature_hurt_01.ogg |
 | sfx/thorns | metal_02.ogg |
 
 ## 80 CC0 creature SFX, by rubberduck
@@ -91,6 +100,8 @@ https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx
 |---|---|
 | boss/slam | bfh1_rock_breaking_01.ogg |
 | loop/charge | bfh1_rock_falling_01.ogg, bfh1_rock_falling_02.ogg, bfh1_rock_falling_03.ogg |
+| sfx/fall | bfh1_falling_03.ogg |
+| sfx/heavy_hit | bfh1_metal_hit_02.ogg |
 | sfx/hurt1 | bfh1_hit_01.ogg |
 | sfx/hurt2 | bfh1_hit_02.ogg |
 | sfx/hurt3 | bfh1_hit_03.ogg |
@@ -104,8 +115,10 @@ https://opengameart.org/content/100-cc0-sfx
 | Sound | From |
 |---|---|
 | boss/gong | gong_01.ogg |
+| sfx/block | metal_03.ogg |
 | sfx/gate | bell_01.ogg |
 | sfx/relic | bell_02.ogg |
+| sfx/spike_warn | switch_01.ogg |
 | sfx/ward | metal_01.ogg |
 
 ## Fantozzi's Footsteps (Grass/Sand & Stone), by qubodup
@@ -168,6 +181,8 @@ https://opengameart.org/content/swishes-sound-pack
 
 | Sound | From |
 |---|---|
+| sfx/dash | swish-2.wav |
+| sfx/heavy | swish-3.wav |
 | sfx/swing1 | swish-1.wav |
 | sfx/swing2 | swish-2.wav |
 | sfx/swing3 | swish-3.wav |
@@ -179,8 +194,14 @@ https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx
 
 | Sound | From |
 |---|---|
+| loop/merchant | cloth-pouch-shake-01.wav, cloth-pouch-shake-02.wav, coins-shake-01.wav |
+| sfx/crit | sword-clash-01.wav |
+| sfx/drink | vial-glass-uncork-01.wav |
 | sfx/jump | boots-leather-jump-01.wav |
 | sfx/land | boots-leather-step-01.wav |
+| sfx/merchant | coins-shake-01.wav |
+| sfx/parry | sword-clash-03.wav |
+| sfx/potion | bottle-glass-cork-01.wav |
 
 ## Park ambiences, by thimras
 
@@ -252,6 +273,7 @@ https://opengameart.org/content/space-winds
 
 | Sound | From |
 |---|---|
+| loop/pit | space-wind.mp3 |
 | loop/wraith | space-wind.mp3 |
 
 ## Tragic ambient main menu, by haeldb
@@ -270,13 +292,30 @@ https://opengameart.org/content/heavenly-loop
 |---|---|
 | music/heaven | Heavenly Loop.ogg |
 
-## Cold Silence, by eponasoft
+## JRPG Pack 1 Exploration, by Juhani Junkala (subspaceaudio)
 
-https://opengameart.org/content/cold-silence
+https://opengameart.org/content/jrpg-pack-1-exploration
 
 | Sound | From |
 |---|---|
-| music/region1 | cold_silence.ogg |
+| music/region1 | Exploration1 - Grasslands.ogg |
+
+## JRPG Pack 2 Towns, by Juhani Junkala (subspaceaudio)
+
+https://opengameart.org/content/jrpg-pack-2-towns
+
+| Sound | From |
+|---|---|
+| music/shop | Town4 - Bazaar.ogg |
+| music/summary | Town2 - Where Time Stands Still.ogg |
+
+## Victory Theme for RPG, by cynicmusic
+
+https://opengameart.org/content/victory-theme-for-rpg
+
+| Sound | From |
+|---|---|
+| music/victory | Victory1_1.mp3 |
 
 ## JRPG Pack 3 Evil, by Juhani Junkala (subspaceaudio)
 

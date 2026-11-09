@@ -1,6 +1,8 @@
 //! The enemies of the walking areas.
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Kind {
     Slime,
     Shade,
@@ -84,6 +86,17 @@ impl Kind {
             Kind::Spawn => 0,
         }
     }
+    /// Gold it drops, before depth and luck.
+    pub(crate) fn gold(self) -> f32 {
+        match self {
+            Kind::Slime => 3.0,
+            Kind::Shade => 4.0,
+            Kind::Ogre => 10.0,
+            Kind::Wraith => 5.0,
+            Kind::Mimic => 20.0,
+            Kind::Spawn => 0.0,
+        }
+    }
     /// How far a blow from you throws it back.
     pub(crate) fn knockback(self) -> f32 {
         match self {
@@ -97,7 +110,7 @@ impl Kind {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Mode {
     /// Has not noticed you.
     Idle,
@@ -108,7 +121,7 @@ pub enum Mode {
     Recover(f32),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Enemy {
     pub kind: Kind,
     pub x: f32,
@@ -117,19 +130,33 @@ pub struct Enemy {
     pub damage: f32,
     pub mode: Mode,
     pub alive: bool,
+    /// Tougher, harder hitting, worth more, and always carries gear.
+    #[serde(default)]
+    pub elite: bool,
 }
 
 impl Enemy {
-    pub fn new(kind: Kind, x: f32, depth: usize) -> Enemy {
-        let health = kind.health() * (1.0 + 0.2 * depth as f32);
+    pub fn new(kind: Kind, x: f32, depth: usize, elite: bool) -> Enemy {
+        let (toughness, strength) = if elite { (2.2, 1.4) } else { (1.0, 1.0) };
+        let health = kind.health() * (1.0 + 0.25 * depth as f32) * toughness;
         Enemy {
             kind,
             x,
             health,
             max_health: health,
-            damage: kind.damage() * (1.0 + 0.15 * depth as f32),
+            damage: kind.damage() * (1.0 + 0.2 * depth as f32) * strength,
             mode: Mode::Idle,
             alive: true,
+            elite,
+        }
+    }
+
+    /// "Slime", or "Elite slime".
+    pub fn name(&self) -> String {
+        if self.elite {
+            format!("Elite {}", self.kind.name().to_lowercase())
+        } else {
+            self.kind.name().to_string()
         }
     }
 }

@@ -56,7 +56,11 @@ PACKS = {
     # Music
     "m_title": ("Tragic ambient main menu", "haeldb", "tragic-ambient-main-menu", ["ambientmain_0.ogg"]),
     "m_heaven": ("Heavenly Loop", "isaiah658", "heavenly-loop", ["Heavenly%20Loop.ogg"]),
-    "m_region1": ("Cold Silence", "eponasoft", "cold-silence", ["cold_silence.ogg"]),
+    "m_explore": ("JRPG Pack 1 Exploration", "Juhani Junkala (subspaceaudio)", "jrpg-pack-1-exploration",
+                  ["JRPG%20Music%20Pack%20%231%20%5BExploration%5D%20by%20Juhani%20Junkala.zip"]),
+    "m_towns": ("JRPG Pack 2 Towns", "Juhani Junkala (subspaceaudio)", "jrpg-pack-2-towns",
+                ["JRPG%20Music%20Pack%20%232%20%5BTowns%5D%20by%20Juhani%20Junkala.zip"]),
+    "m_victory": ("Victory Theme for RPG", "cynicmusic", "victory-theme-for-rpg", ["Victory1_1.mp3"]),
     "m_evil": ("JRPG Pack 3 Evil", "Juhani Junkala (subspaceaudio)", "jrpg-pack-3-evil",
                ["Evil2%20-%20Catacombs.ogg", "Evil4%20-%20Witch%27s%20Lair.ogg",
                 "Evil5%20-%20Whispers%20From%20Beyond.ogg", "Evil3%20-%20Apocalypse.ogg"]),
@@ -245,6 +249,43 @@ def build(cache):
     one("sfx/draw", "rpg", "battle/sword-unsheathe.wav", db=-4)
     one("sfx/buy", "rpg80", "item_coins_01.ogg", db=-3)
     one("sfx/relic", "sfx100", "bell_02.ogg", db=-3)
+    # Moves, blocks and the blows they land.
+    one("sfx/dash", "swishes", "swish-2.wav", db=-3, shift=1.25)
+    one("sfx/heavy", "swishes", "swish-3.wav", db=-2, shift=0.7)
+    one("sfx/charged", "rpg", "inventory/metal-ringing.wav", db=-8)
+    heavy = trim(S("sfx/heavy_hit", "breaking", "bfh1_metal_hit_02.ogg"))
+    blade = trim(S("sfx/heavy_hit", "rpg80", "blade_02.ogg"))
+    n = max(len(heavy), len(blade))
+    write("sfx/heavy_hit", np.pad(pitch(heavy, 0.8), (0, n))[:n] + 0.7 * np.pad(blade, (0, n))[:n])
+    one("sfx/crit", "tiny", "sword-clash-01.wav", db=-3)
+    one("sfx/block", "sfx100", "metal_03.ogg", db=-3)
+    parry = trim(S("sfx/parry", "tiny", "sword-clash-03.wav"))
+    write("sfx/parry", reverb(parry, 0.8, 0.25), db=-1)
+    one("sfx/stagger", "rpg80", "creature_hurt_01.ogg", db=-4)
+
+    # Gold, potions and gear.
+    one("sfx/coins", "rpg80", "item_coins_02.ogg", db=-5)
+    one("sfx/potion", "tiny", "bottle-glass-cork-01.wav", db=-4)
+    uncork = trim(S("sfx/drink", "tiny", "vial-glass-uncork-01.wav"))
+    bubble = trim(S("sfx/drink", "rpg", "inventory/bubble.wav"))
+    write("sfx/drink", np.concatenate([uncork, np.zeros(int(0.08 * SR)), bubble]), db=-4)
+    one("sfx/loot_drop", "rpg80", "item_misc_02.ogg", db=-4)
+    one("sfx/equip", "rpg", "inventory/armor-light.wav", db=-4)
+    one("sfx/merchant", "tiny", "coins-shake-01.wav", db=-5)
+    gems = [trim(S("loop/loot", "rpg80", f"item_gem_0{i}.ogg")) * 0.5 for i in range(1, 4)]
+    write("loop/loot", stitch(gems, 6, (0.6, 1.4), 21, (0.4, 0.7)), loop=True, db=-12)
+    purse = [trim(S("loop/merchant", "tiny", n)) for n in
+             ("coins-shake-01.wav", "cloth-pouch-shake-01.wav", "cloth-pouch-shake-02.wav")]
+    write("loop/merchant", stitch(purse, 10, (0.8, 2.2), 22), loop=True, db=-8)
+
+    # Pits and spikes.
+    deep = lp(S("loop/pit", "spacewind", "space-wind.mp3"), 700)
+    write("loop/pit", bed(deep, 12, 20), loop=True, db=-3)
+    fall = trim(S("sfx/fall", "breaking", "bfh1_falling_03.ogg"))
+    write("sfx/fall", reverb(fall, 1.2, 0.35), db=-2)
+    one("sfx/spike_warn", "sfx100", "switch_01.ogg", db=-3)
+    one("sfx/spike_up", "rpg", "battle/sword-unsheathe3.wav", db=-2, shift=0.8)
+
     gate = trim(S("sfx/gate", "sfx100", "bell_01.ogg"))
     write("sfx/gate", reverb(gate, 1.5, 0.3), db=-3)
 
@@ -356,12 +397,15 @@ def build(cache):
 
     music("music/title", "m_title", "ambientmain_0.ogg")
     music("music/heaven", "m_heaven", "Heavenly Loop.ogg")
-    music("music/region1", "m_region1", "cold_silence.ogg")
+    music("music/region1", "m_explore", "Exploration1 - Grasslands.ogg")
     music("music/region2", "m_evil", "Evil2 - Catacombs.ogg")
     music("music/region3", "m_evil", "Evil4 - Witch's Lair.ogg")
     music("music/region4", "m_evil", "Evil5 - Whispers From Beyond.ogg")
     music("music/boss", "m_boss", "Juhani Junkala - Epic Boss Battle [Seamlessly Looping].wav")
     music("music/king", "m_evil", "Evil3 - Apocalypse.ogg")
+    music("music/shop", "m_towns", "Town4 - Bazaar.ogg")
+    music("music/summary", "m_towns", "Town2 - Where Time Stands Still.ogg")
+    music("music/victory", "m_victory", "Victory1_1.mp3")
 
     synthesize()
 

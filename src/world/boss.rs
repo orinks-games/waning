@@ -1,8 +1,10 @@
 //! The four bosses: one at the bottom of each region.
 
+use serde::{Deserialize, Serialize};
+
 use super::{Enemy, Ev, Kind, Mode, Target, World, ARENA_LENGTH, CHARGE_SPEED, SLAM_REACH};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BossKind {
     Shepherd,
     Mother,
@@ -10,7 +12,7 @@ pub enum BossKind {
     King,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Attack {
     /// Walks up and brings its weapon down: jump, or be out of reach.
     Slam,
@@ -44,10 +46,10 @@ impl BossKind {
     }
     pub(crate) fn health(self) -> f32 {
         match self {
-            BossKind::Shepherd => 550.0,
-            BossKind::Mother => 700.0,
-            BossKind::Ferryman => 850.0,
-            BossKind::King => 1150.0,
+            BossKind::Shepherd => 600.0,
+            BossKind::Mother => 800.0,
+            BossKind::Ferryman => 1000.0,
+            BossKind::King => 1350.0,
         }
     }
     pub(crate) fn damage(self) -> f32 {
@@ -105,7 +107,7 @@ impl Attack {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub enum BossMode {
     /// Between attacks; counts down to the next one.
     Idle(f32),
@@ -121,7 +123,7 @@ pub enum BossMode {
     Vanished(f32),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Boss {
     pub kind: BossKind,
     pub x: f32,
@@ -162,7 +164,8 @@ impl Boss {
 impl World {
     pub(super) fn boss_act(&mut self, dt: f32, out: &mut Vec<Ev>) {
         let px = self.x;
-        let airborne = self.airborne();
+        let airborne = self.evasive();
+        let warn = self.warn;
         let Some(mut b) = self.boss.take() else {
             return;
         };
@@ -196,14 +199,14 @@ impl World {
                     if attack == Attack::Slam {
                         b.mode = BossMode::Closing;
                     } else {
-                        b.mode = BossMode::WindUp(attack, b.windup(attack));
+                        b.mode = BossMode::WindUp(attack, b.windup(attack) * warn);
                         out.push(Ev::BossWindUp(attack));
                     }
                 }
             }
             BossMode::Closing => {
                 if d.abs() <= 2.0 {
-                    b.mode = BossMode::WindUp(Attack::Slam, b.windup(Attack::Slam));
+                    b.mode = BossMode::WindUp(Attack::Slam, b.windup(Attack::Slam) * warn);
                     out.push(Ev::BossWindUp(Attack::Slam));
                 } else {
                     b.x += d.signum() * 2.2 * dt;
@@ -285,7 +288,7 @@ impl World {
         let (bx, damage) = (b.x, b.damage);
         self.boss = Some(b);
         if slam || charge_hit {
-            self.take_hit(damage, Some(Target::Boss), out);
+            self.take_hit(damage, Some(Target::Boss), Some(bx), out);
         }
         for n in 0..volley {
             let dir = if px >= bx { 1.0 } else { -1.0 };
@@ -297,7 +300,7 @@ impl World {
             let mut made = Vec::new();
             for side in [-2.0, 2.0] {
                 let x = (bx + side).clamp(0.5, ARENA_LENGTH - 0.5);
-                let mut e = Enemy::new(Kind::Spawn, x, self.stage);
+                let mut e = Enemy::new(Kind::Spawn, x, self.stage, false);
                 e.mode = Mode::Approach;
                 self.enemies.push(e);
                 made.push(self.enemies.len() - 1);

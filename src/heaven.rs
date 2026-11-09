@@ -2,18 +2,15 @@
 //! buys blessings for the next descent.
 
 use hearken::menu::{Label, Menu, MenuCore, MenuItem};
-use hearken::{Bus, Ctx, Sound};
+use hearken::{Bus, Ctx};
 
 use crate::progress::{Blessing, BuyError, Progress};
 use crate::story;
 use crate::world::{World, STAGES};
-use crate::{Play, Waning};
+use crate::{music, Play, Waning};
 
 pub struct Heaven {
     menu: MenuCore<Self, Waning>,
-    ambience: Sound,
-    /// Said once, before the menu, when you arrive from a run.
-    arrival: Option<String>,
 }
 
 impl Heaven {
@@ -21,15 +18,6 @@ impl Heaven {
         Heaven {
             menu: MenuCore::new("Heaven")
                 .with_intro_help("Buy blessings with grace, then descend."),
-            ambience: Sound::NONE,
-            arrival: None,
-        }
-    }
-
-    pub fn after_run(line: String) -> Self {
-        Heaven {
-            arrival: Some(line),
-            ..Heaven::new()
         }
     }
 
@@ -95,16 +83,9 @@ impl Menu for Heaven {
         if !ctx.game.loaded {
             ctx.game = crate::Progress::load(&mut ctx.vault);
         }
-        self.ambience = ctx.audio.start_loop("music/heaven", None, Bus::MUSIC);
+        music::play(ctx, "music/heaven");
         self.refresh(ctx, false);
-        let grace = format!("Heaven. {} grace.", ctx.game.grace);
-        if let Some(line) = self.arrival.take() {
-            ctx.audio.play("sfx/ascend", Bus::EFFECTS);
-            ctx.say(line);
-            ctx.say_queued(grace);
-        } else {
-            ctx.say(grace);
-        }
+        ctx.say(format!("Heaven. {} grace.", ctx.game.grace));
         // The Keeper speaks to what you have reached, once each.
         let p = &mut ctx.game;
         let mut keeper = None;
@@ -127,11 +108,12 @@ impl Menu for Heaven {
         ctx.say_queued(current);
     }
 
-    fn exit(&mut self, ctx: &mut Ctx<Waning>) {
-        ctx.audio.stop(self.ambience, 800);
-    }
-
     fn build_items(&mut self, ctx: &mut Ctx<Waning>) -> Vec<MenuItem<Self, Waning>> {
+        let descend_help = if crate::progress::load_run(&mut ctx.vault).is_some() {
+            "Start a new run from the top. It replaces the descent you left."
+        } else {
+            "Start a new run from the top."
+        };
         let mut items = vec![
             MenuItem::new("Descend", |_s: &mut Self, ctx: &mut Ctx<Waning>| {
                 ctx.game.runs += 1;
@@ -140,7 +122,7 @@ impl Menu for Heaven {
                 let world = World::new(&ctx.game, seed);
                 ctx.replace(Play::new(world));
             })
-            .help("Start a new run from the top."),
+            .help(descend_help),
         ];
         items.extend(Blessing::ALL.into_iter().map(Self::blessing_row));
         items.push(
